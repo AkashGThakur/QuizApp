@@ -1,0 +1,58 @@
+package quiz.com.example.controller;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import quiz.com.example.exception.QuizNotFoundException;
+import quiz.com.example.model.Quiz;
+import quiz.com.example.repository.QuizRepository;
+
+
+@RestController
+@RequestMapping("/api/quizzes")
+public class QuizController {
+
+    @Autowired
+    private QuizRepository quizRepository;
+
+    @PostMapping("/")
+    public Quiz createQuiz(@RequestBody Quiz quiz) {
+        return quizRepository.save(quiz);
+    }
+
+    @GetMapping("/active")
+    public Quiz getActiveQuiz() {
+        LocalDateTime now = LocalDateTime.now();
+        return quizRepository.findByStartDateBeforeAndEndDateAfter(now, now)
+                .orElseThrow(() -> new QuizNotFoundException("No active quiz found"));
+    }
+
+    @GetMapping("/{quizId}/result")
+    public int getQuizResult(@PathVariable Long quizId) {
+        LocalDateTime now = LocalDateTime.now().plusMinutes(5); // assuming result can only be accessed 5 minutes after end time
+        Quiz quiz = quizRepository.findById(quizId)
+                .orElseThrow(() -> new QuizNotFoundException("Quiz not found with id " + quizId));
+        if (quiz.getEndDate().isAfter(now)) {
+            throw new QuizNotFoundException("Quiz result not available yet");
+        }
+        return quiz.getRightAnswer();
+    }
+
+    @Scheduled(fixedRate = 60000) // check every minute for quizzes that have ended
+    public void updateExpiredQuizzes() {
+        LocalDateTime now = LocalDateTime.now();
+        List<Quiz> expiredQuizzes = quizRepository.findByEndDateBefore(now);
+        for (Quiz quiz : expiredQuizzes) {
+            quizRepository.delete(quiz);
+        }
+    }
+}

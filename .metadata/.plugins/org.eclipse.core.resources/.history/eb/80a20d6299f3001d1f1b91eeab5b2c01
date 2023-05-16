@@ -1,0 +1,5 @@
+package quiz.com.example.model;
+
+public class Quiz {
+
+}

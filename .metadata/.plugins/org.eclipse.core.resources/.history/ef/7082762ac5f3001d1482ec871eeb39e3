@@ -1,0 +1,12 @@
+package quiz.com.example.exception;
+
+@ResponseStatus(value = HttpStatus.NOT_FOUND)
+public class QuizNotFoundException extends RuntimeException {
+	
+private static final long serialVersionUID = 1L;
+	
+	public QuizNotFoundException(String message) {
+		super(message);
+	}
+
+}

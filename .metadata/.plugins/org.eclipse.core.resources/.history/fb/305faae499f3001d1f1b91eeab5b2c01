@@ -1,0 +1,5 @@
+package quiz.com.example.exception;
+
+public class QuizNotFoundException {
+
+}
